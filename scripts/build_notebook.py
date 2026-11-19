@@ -37,6 +37,7 @@ in the separate written report; the source snapshot is documented below.
 """)
 markdown("## 1. Imports, local paths, and reproducibility")
 code("""
+%matplotlib inline
 from pathlib import Path
 import hashlib
 import json

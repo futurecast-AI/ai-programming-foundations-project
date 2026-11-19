@@ -1,0 +1,105 @@
+{
+  "author": "AI Foundations (Edward Hickman)",
+  "source_sha256": "81787d320d7f7b03df935e91de8bd19e11d45c5bbcab86ef4d4a76dc91b7d4f2",
+  "python_version": "3.11.18",
+  "package_versions": {
+    "numpy": "2.4.6",
+    "pandas": "3.1.1",
+    "matplotlib": "3.11.2",
+    "seaborn": "0.13.2"
+  },
+  "cleaning": {
+    "raw_rows": 891,
+    "raw_columns": 15,
+    "cleaned_rows": 891,
+    "cleaned_columns": 9,
+    "renamed_columns": 0,
+    "missing_embarkation_labeled_unknown": 2,
+    "missing_ages_preserved": 177,
+    "repeated_full_row_combinations_retained": 107,
+    "rows_dropped": 0
+  },
+  "overall_survival_rate": 0.3838383838383838,
+  "survivors": 342,
+  "known_age_count": 714,
+  "median_recorded_age": 28.0,
+  "age_missing_percent": 19.865319865319865,
+  "class_summary": [
+    {
+      "pclass": 1,
+      "passengers": 216,
+      "survivors": 136,
+      "survival_rate": 0.6296296296296297
+    },
+    {
+      "pclass": 2,
+      "passengers": 184,
+      "survivors": 87,
+      "survival_rate": 0.47282608695652173
+    },
+    {
+      "pclass": 3,
+      "passengers": 491,
+      "survivors": 119,
+      "survival_rate": 0.24236252545824846
+    }
+  ],
+  "sex_class_summary": [
+    {
+      "pclass": 1,
+      "sex": "female",
+      "passengers": 94,
+      "survivors": 91,
+      "survival_rate": 0.9680851063829787
+    },
+    {
+      "pclass": 1,
+      "sex": "male",
+      "passengers": 122,
+      "survivors": 45,
+      "survival_rate": 0.36885245901639346
+    },
+    {
+      "pclass": 2,
+      "sex": "female",
+      "passengers": 76,
+      "survivors": 70,
+      "survival_rate": 0.9210526315789473
+    },
+    {
+      "pclass": 2,
+      "sex": "male",
+      "passengers": 108,
+      "survivors": 17,
+      "survival_rate": 0.1574074074074074
+    },
+    {
+      "pclass": 3,
+      "sex": "female",
+      "passengers": 144,
+      "survivors": 72,
+      "survival_rate": 0.5
+    },
+    {
+      "pclass": 3,
+      "sex": "male",
+      "passengers": 347,
+      "survivors": 47,
+      "survival_rate": 0.13544668587896252
+    }
+  ],
+  "age_missing_summary": [
+    {
+      "age_missing": false,
+      "passengers": 714,
+      "survivors": 290,
+      "survival_rate": 0.4061624649859944
+    },
+    {
+      "age_missing": true,
+      "passengers": 177,
+      "survivors": 52,
+      "survival_rate": 0.2937853107344633
+    }
+  ]
+}
