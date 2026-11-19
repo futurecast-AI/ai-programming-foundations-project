@@ -10,25 +10,29 @@
 - Figures: three embedded, labeled visualizations and standalone PNG exports.
 - Interpretation: the notebook ends with complete-sentence findings and limitations.
 - Dependencies: `requirements.txt` generated with the project environment's `pip freeze`.
-- Execution: notebook ran without errors; eight checks passed.
+- Execution: notebook ran without errors; 12 checks passed (eight workflow and four report checks).
 - Reproduction: a separate environment installed the frozen requirements and
   produced the same evidence JSON.
-- Report draft: all requested sections, explicit figure interpretations, bias
+- Written report: all requested sections, explicit figure interpretations, bias
   discussion, three-to-six-sentence future-integration reflection, and references.
 - Sources: required Danchev article plus two additional peer-reviewed papers;
   the dataset is also attributed.
 - Git: real incremental commits on `development/titanic-workflow`, separate from `main`.
+- Report formatting: populated the user-supplied APA template, preserving its
+  styles, page geometry, header, and footer.
+- Final report files: `module_summary.pdf` and editable `module_summary.docx`.
+- Font export: the DOCX retains the template's Arial styles; LibreOffice uses
+  metrically compatible Liberation Sans to render the PDF in this environment.
 
 ## Required before submission
 
-- Supply the course's downloadable APA template.
-- Transfer the reviewed report into that template, preserving its formatting.
 - Review the analysis, code, and AI-assistance acknowledgement as the learner.
-- Export and visually check the final file named `module_summary.pdf`.
+- Confirm whether an instructor name or due date needs to be added to the cover.
+  Neither was supplied, and neither has been invented.
 - Approve merging the completed work so the repository's default branch contains
   the final deliverables.
 - Confirm that the final public repository URL opens for the reviewer.
 
-`module_summary_draft.pdf` is clearly marked as a preview and is not a substitute
-for the template-based final report. Do not submit this repository as complete
-until the remaining items are resolved.
+Use `module_summary.pdf`, not the earlier draft preview. The final submission
+package omits the superseded draft files. Review the work and merge the completed
+development branch before sharing the repository's default-branch URL.

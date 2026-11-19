@@ -1,14 +1,16 @@
-"""Create an evidence-grounded report draft without claiming the missing course template."""
+"""Populate the supplied APA DOCX template and export the evidence-grounded report."""
 from pathlib import Path
+from copy import deepcopy
+import argparse
+import hashlib
 import json
-from xml.sax.saxutils import escape
+import subprocess
 
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import inch
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Image, PageBreak,
-)
+from docx import Document
+from docx.enum.text import WD_BREAK
+from docx.shared import Inches
+from docx.text.paragraph import Paragraph
+from lxml import etree
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "outputs"
@@ -116,11 +118,9 @@ sections = [
      "human lives, infer individual behavior, or claim causal mechanisms. A next step "
      "would be to compare the subset with a documented manifest and investigate "
      "missingness and record identity using reliable source metadata.\n\n"
-     "AI assistance was used to help prepare code, checks, and this draft narrative. "
-     "The learner must review, understand, and revise the submission, and should retain "
-     "this acknowledgement or adapt it accurately to the assistance actually used. "
-     "The report is tied to the executed notebook's saved outputs, not hypothetical "
-     "analysis results."),
+     "Replit AI assisted with planning, code preparation, debugging, verification, "
+     "and report drafting. The analysis is grounded in the executed notebook, its "
+     "checks, and saved outputs; no hypothetical experiments are presented as results."),
     ("Reproducibility",
      "The repository includes the immutable local CSV and its fingerprint, the executable "
      "data_workflow.ipynb notebook, exported figures and tables, automated checks, and "
@@ -131,10 +131,10 @@ sections = [
      "identical behavior on every future operating system.\n\n"
      "Git work uses the main branch and development/titanic-workflow branch, with "
      "separate genuine commits for data provenance and notebook setup, analysis code, "
-     "and executed evidence and reporting. This supports inspection of changes rather "
+     "executed evidence and draft reporting, and the template-based report. This supports inspection of changes rather "
      "than a fabricated history and implements the dependency-recording and version-control "
      "practices discussed by Rule et al. (2019). The development branch is proposed for "
-     "review; the final report must still be placed in the course APA template."),
+     "review, and the report is populated into the supplied student-paper APA template."),
     ("Future Integration Reflections",
      "For machine-learning use, the workflow would define survival as the target, "
      "reserve a held-out test set before fitting transformations, and fit missing-value "
@@ -177,63 +177,129 @@ references = [
     "a29a0141d20e156043ec257a64c8de3b3a03fd6e/titanic.csv",
 ]
 
-draft_notice = (
-    "DRAFT FOR STUDENT REVIEW — The required course APA template has not been "
-    "provided. This preview is not module_summary.pdf and is not submission-ready."
-)
-text = "# Titanic Data Workflow\n\nAI Foundations (Edward Hickman)\n\n" + draft_notice + "\n\n"
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("template", type=Path, help="DOCX export of the supplied Google Docs template")
+args = parser.parse_args()
+template = Document(args.template)
+patterns = [deepcopy(p._p) for p in template.paragraphs]
+original_section = deepcopy(template.sections[0]._sectPr)
+original_styles = template.styles.element.xml
+original_header_footer = {
+    part.partname: part.blob for part in template.part.package.parts
+    if "header" in part.content_type or "footer" in part.content_type
+}
+body = template._element.body
+for child in list(body):
+    if child is not template.sections[0]._sectPr:
+        body.remove(child)
+
+
+def append_pattern(index, text=""):
+    """Copy a template paragraph's formatting and replace only its sample content."""
+    element = deepcopy(patterns[index])
+    example = Paragraph(element, template._body)
+    run_properties = deepcopy(example.runs[0]._r.rPr) if example.runs else None
+    for child in list(element):
+        if child is not element.pPr:
+            element.remove(child)
+    body.insert(len(body) - 1, element)
+    paragraph = Paragraph(element, template._body)
+    run = paragraph.add_run(text)
+    if run_properties is not None:
+        run._r.insert(0, run_properties)
+    return paragraph
+
+
+def page_break():
+    """Use the template's existing page-break paragraph formatting."""
+    paragraph = append_pattern(13)
+    paragraph.runs[0].add_break(WD_BREAK.PAGE)
+
+
+cover = {
+    4: "Titanic Data Workflow",
+    6: "AI Foundations (Edward Hickman)",
+    7: "Udacity",
+    8: "AI Programming Foundations Capstone",
+    9: "",
+    10: "",
+}
+for index in range(11):
+    append_pattern(index, cover.get(index, ""))
+page_break()
+append_pattern(14, "Titanic Data Workflow")
+
+text = "# Titanic Data Workflow\n\nAI Foundations (Edward Hickman)\n\n"
 for heading, paragraph in sections:
     text += f"## {heading}\n\n{paragraph}\n\n"
-text += "## References\n\n" + "\n\n".join(references) + "\n"
-(ROOT / "report_draft.md").write_text(text)
-
-styles = getSampleStyleSheet()
-styles["BodyText"].fontSize = 10
-styles["BodyText"].leading = 15
-styles["BodyText"].spaceAfter = 10
-styles["Heading1"].fontSize = 14
-styles["Heading1"].leading = 18
-story = [
-    Paragraph("Titanic Data Workflow", styles["Title"]),
-    Paragraph("AI Foundations (Edward Hickman)", styles["Normal"]),
-    Spacer(1, .15 * inch),
-    Paragraph(escape(draft_notice), styles["BodyText"]),
-]
-for heading, paragraph in sections:
-    story.append(Paragraph(escape(heading), styles["Heading1"]))
+    append_pattern(19, heading)
     for part in paragraph.split("\n\n"):
-        story.append(Paragraph(escape(part), styles["BodyText"]))
-story.append(Paragraph("References", styles["Heading1"]))
-for reference in references:
-    story.append(Paragraph(escape(reference), styles["BodyText"]))
-story.append(PageBreak())
-story.append(Paragraph("Figures from the executed notebook", styles["Heading1"]))
+        append_pattern(15, part)
+text += "## References\n\n" + "\n\n".join(references) + "\n"
+(ROOT / "module_summary.md").write_text(text)
+
 for i, filename in enumerate(
     ["figure_1_age_distribution.png", "figure_2_survival_by_class.png",
      "figure_3_survival_by_sex_class.png"], 1
 ):
-    image = Image(str(OUT / filename))
-    image.drawHeight *= (6.2 * inch) / image.drawWidth
-    image.drawWidth = 6.2 * inch
-    story.append(image)
-    if i < 3:
-        story.append(PageBreak())
+    page_break()
+    append_pattern(19, f"Figure {i}")
+    image_paragraph = append_pattern(1)
+    image_paragraph.runs[0].add_picture(str(OUT / filename), width=Inches(6.5))
+    append_pattern(
+        15, "Note. Generated directly from the executed data workflow. "
+        "Sample sizes and missing observations are stated in the figure."
+    )
 
+page_break()
+append_pattern(37, "References")
+italic_spans = [
+    "Journal of Open Source Education, 5",
+    "PLOS Computational Biology, 15",
+    "BMJ, 338",
+    "Titanic",
+]
+for reference, italic_text in zip(references, italic_spans):
+    paragraph = append_pattern(38)
+    example_rpr = deepcopy(paragraph.runs[0]._r.rPr)
+    for run in list(paragraph.runs):
+        paragraph._p.remove(run._r)
+    before, after = reference.split(italic_text, 1)
+    for value, italic in [(before, False), (italic_text, True), (after, False)]:
+        run = paragraph.add_run(value)
+        if example_rpr is not None:
+            run._r.insert(0, deepcopy(example_rpr))
+        run.italic = italic
 
-def footer(canvas, doc):
-    """Mark every preview page as a draft and number it."""
-    canvas.saveState()
-    canvas.setFont("Helvetica", 8)
-    canvas.setFillColor(colors.HexColor("#555555"))
-    canvas.drawString(54, 30, "Draft — awaiting the course APA template and student review")
-    canvas.drawRightString(558, 30, str(doc.page))
-    canvas.restoreState()
-
-
-SimpleDocTemplate(
-    str(ROOT / "module_summary_draft.pdf"),
-    pagesize=(612, 792), rightMargin=54, leftMargin=54,
-    topMargin=50, bottomMargin=50, title="Titanic Data Workflow — Draft",
-    author="AI Foundations (Edward Hickman)",
-).build(story, onFirstPage=footer, onLaterPages=footer)
-print("Wrote report_draft.md and module_summary_draft.pdf")
+template.core_properties.title = "Titanic Data Workflow"
+template.core_properties.author = "AI Foundations (Edward Hickman)"
+template.core_properties.subject = "AI Programming Foundations capstone"
+template.core_properties.comments = (
+    "Prepared using the user-supplied CCC APA 7th ed. Student Paper Template. "
+    "Instructor and due date were not supplied and are omitted."
+)
+assert template.styles.element.xml == original_styles
+assert etree.tostring(
+    template.sections[0]._sectPr, method="c14n", exclusive=True
+) == etree.tostring(original_section, method="c14n", exclusive=True)
+assert {
+    part.partname: part.blob for part in template.part.package.parts
+    if "header" in part.content_type or "footer" in part.content_type
+} == original_header_footer
+template.save(ROOT / "module_summary.docx")
+subprocess.run(
+    ["libreoffice", "-env:UserInstallation=file:///tmp/foundations-report-office",
+     "--headless", "--convert-to", "pdf", "--outdir", str(ROOT),
+     str(ROOT / "module_summary.docx")],
+    check=True,
+)
+(OUT / "report_template_audit.json").write_text(json.dumps({
+    "template_title": "CCC APA 7th ed. Student Paper Template",
+    "template_url": "https://docs.google.com/document/d/1cv_MjQVKnGc9sbaYiOUna2155jMEvUxACwyDax-XYWI/edit",
+    "template_export_sha256": hashlib.sha256(args.template.read_bytes()).hexdigest(),
+    "styles_preserved": True, "section_geometry_preserved": True,
+    "header_preserved": True, "footer_preserved": True,
+    "instructor_and_due_date": "Not supplied; omitted instead of invented",
+    "pdf_export": "LibreOffice; metrically compatible Liberation Sans renders the retained Arial styles",
+}, indent=2))
+print("Wrote module_summary.md, module_summary.docx, and module_summary.pdf")

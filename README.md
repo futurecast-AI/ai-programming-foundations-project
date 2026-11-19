@@ -40,8 +40,8 @@ pip freeze > requirements.txt
 Run the checks with `python -m pytest tests -q`. Figures and machine-readable
 results are written to `outputs/`.
 
-## Submission status
+## Written report
 
-The report's final `module_summary.pdf` must use the course-provided APA template.
-That template has not yet been supplied; draft report material is not a final
-submission. The development branch preserves the work for review.
+`module_summary.pdf` is the template-based report; `module_summary.docx` is its
+editable source. Review both the report and notebook before submission.
+The development branch preserves the work for review before it is merged into `main`.
